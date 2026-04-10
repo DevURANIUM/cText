@@ -341,7 +341,6 @@ def delete_paste(request: Request, paste_id: str, _csrf: None = Depends(validate
     return RedirectResponse(url="/", status_code=303)
 
 
-# IMPORTANT: keep this last to avoid route conflicts
 @app.get("/{paste_id}", response_class=HTMLResponse, name="view_paste")
 def view_paste(request: Request, paste_id: str, db: Session = Depends(get_db)):
     paste = get_paste_or_404(db, paste_id)
