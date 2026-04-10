@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>{% block title %}cText.ir{% endblock %}</title>
+
+  <meta name="description" content="{% block meta_description %}cText.ir – Essential text tools for everyday development{% endblock %}" />
+  <meta name="robots" content="index,follow" />
+  <meta name="theme-color" content="#0b1020" />
+
+  <link rel="canonical" href="{% block canonical %}https://ctext.ir/{% endblock %}" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+
+<body>
+  <div class="bg-blobs"></div>
+
+  <main class="page">
+    <header class="header">
+      <div class="title">cText.ir</div>
+      <div class="subtitle">{% block subtitle %}{% endblock %}</div>
+    </header>
+
+    <div class="rule"></div>
+
+    {% block content %}{% endblock %}
+
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-left">
+          <span class="footer-brand">cText.ir</span>
+          <span class="footer-sep">•</span>
+          <span class="footer-copy">© 2026</span>
+        </div>
+
+        <div class="footer-right">
+          Powered by 
+          <a href="https://t.me/DevRouter" class="footer-brand" target="_blank" rel="noopener" style="text-decoration: none;">
+            URANIUM
+          </a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block subtitle %}Not Found{% endblock %}
+
+{% block content %}
+  <section class="card card-md notfound-card">
+    <div class="notfound-icon">😕</div>
+
+    <div class="h1 notfound-title">Paste Not Found</div>
+
+    <div class="muted notfound-text">
+      This paste does not exist or has already been deleted.
+    </div>
+
+    <div class="notfound-actions">
+      <a class="link notfound-link" href="/">Back to Home →</a>
+    </div>
+  </section>
+{% endblock %}

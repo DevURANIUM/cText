@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+gunicorn
+jinja2
+sqlalchemy
+python-dotenv
+python-multipart
+bcrypt
+cryptography
+itsdangerous

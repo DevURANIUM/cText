@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block subtitle %}View Paste{% endblock %}
+
+{% block content %}
+  <section class="card card-xl">
+    <div class="topbar">
+      <div class="section-title">Paste</div>
+
+      <div class="toplinks">
+        {% if not locked %}
+          <a class="link" href="/raw/{{ paste_id }}" target="_blank">Raw</a>
+          <span class="dot">•</span>
+        {% endif %}
+
+        <a class="link" href="/">New Paste</a>
+      </div>
+    </div>
+
+    {% if locked %}
+      <div class="lockbox lockbox-rtl">
+        <div class="lock-title">This paste is password protected</div>
+
+        <div class="lock-hint">
+          After entering the correct password, this page will be unlocked.
+        </div>
+
+        {% if error %}
+          <div class="error" style="margin-top:12px">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/{{ paste_id }}/unlock" class="unlock-form unlock-form-vertical">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input class="pass-input wide" type="password" name="password" placeholder="Enter password..." />
+          <button class="btn" type="submit">Unlock</button>
+        </form>
+      </div>
+    {% else %}
+
+      <div class="paste-box">
+        <button class="copy-inside" type="button" onclick="copyPaste()">Copy</button>
+
+        <pre class="pre" id="pastePre">{{ content }}</pre>
+
+        <textarea id="pasteContent" class="copy-hidden">{{ content }}</textarea>
+      </div>
+
+    {% endif %}
+  </section>
+
+  <script>
+    function copyPaste(){
+      const el = document.getElementById("pasteContent");
+      const btn = document.querySelector(".copy-inside");
+      if (!el || !btn) return;
+
+      el.select();
+      el.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(el.value);
+
+      const old = btn.innerText;
+      btn.innerText = "Copied";
+      setTimeout(() => btn.innerText = old, 1200);
+    }
+  </script>
+{% endblock %}

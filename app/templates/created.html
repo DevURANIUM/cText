@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block subtitle %}Paste Created Successfully{% endblock %}
+
+{% block content %}
+  <section class="card card-md center">
+    <div class="check">✓</div>
+    <div class="h1">Your paste is ready!</div>
+    <div class="muted">Share this link with anyone:</div>
+  </section>
+
+  <section class="card card-md relative">
+    <div class="top-actions">
+      <form
+        method="post"
+        action="/{{ paste_id }}/delete"
+      >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="delete-btn" type="submit">Delete</button>
+      </form>
+    </div>
+
+    <div class="section-title">Paste URL</div>
+
+    <div class="copybox">
+      <input id="pasteUrl" class="copyinput" value="{{ paste_url }}" readonly />
+      <button class="iconbtn" type="button" onclick="copyUrl()" title="Copy">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+        </svg>
+      </button>
+    </div>
+    
+    {% if is_protected %}
+      <div class="hint">🕒 This paste will expire in {{ expire_label }}.</div>
+    {% endif %}
+
+    <div class="actions">
+      <a class="link" href="/">← Create another paste</a>
+      <a class="link" href="/{{ paste_id }}">View Paste →</a>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function copyUrl(){
+    const el = document.getElementById("pasteUrl");
+    el.select();
+    el.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(el.value);
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block subtitle %}Create New Paste{% endblock %}
+
+{% block content %}
+  <section class="card card-xl">
+    <form method="post" action="/paste" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if request.session.get("flash_success") %}
+        <div class="success">{{ request.session.pop("flash_success") }}</div>
+      {% endif %}
+
+      <div class="field">
+        <textarea
+          class="textarea"
+          name="content"
+          placeholder="Paste your text here..."
+          spellcheck="false"
+        >{{ (content or "") }}</textarea>
+      </div>
+
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+
+      <div class="bottom-row">
+        <div class="left-controls">
+          <div class="expire">
+            <div class="expire-label">🕒 <span>Expires in:</span></div>
+          <select class="select" name="expires_in">
+            {% for label, minutes in expire_choices %}
+              <option value="{{ minutes }}" {% if minutes == default_expire %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+          </div>
+
+          <div class="pass">
+            <div class="expire-label">🔒 <span>Password (optional):</span></div>
+            <input class="pass-input" type="password" name="password" placeholder="••••••••" />
+          </div>
+        </div>
+
+        <button class="btn" type="submit">Create Paste</button>
+      </div>
+    </form>
+  </section>
+{% endblock %}
