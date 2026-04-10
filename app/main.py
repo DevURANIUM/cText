@@ -381,16 +381,3 @@ def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:
         return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
     return HTMLResponse(str(exc.detail), status_code=exc.status_code)
-
-
-# @app.get("/cleanup")
-# def cleanup_expired(db: Session = Depends(get_db)):
-#     stmt = select(Paste)
-#     pastes = db.scalars(stmt).all()
-#     n = 0
-#     for p in pastes:
-#         if p.expires_at <= now_utc_naive():
-#             db.delete(p)
-#             n += 1
-#     db.commit()
-#     return {"deleted": n}
