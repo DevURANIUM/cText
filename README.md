@@ -98,7 +98,7 @@ apt remove --purge python3-typing-extensions
 ```bash
 mkdir /var/www/ctext/
 cd /var/www/ctext/
-git clone https://github.com/yourusername/ctext.git .
+git clone https://github.com/DevURANIUM/cText.git .
 pip install -r requirements.txt --break-system-packages
 ```
 
