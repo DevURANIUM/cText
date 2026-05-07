@@ -130,7 +130,7 @@ python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().
 python3 -c "import secrets; print(secrets.token_urlsafe(64))"
 
 # CSRF_SESSION_KEY (just a session key name, e.g. a short string)
-# Example value: csrf_token
+python3 -c "import secrets; print(secrets.token_urlsafe(64))"
 ```
 
 Example `.env` after filling in:
