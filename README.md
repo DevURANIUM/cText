@@ -6,11 +6,20 @@
 
 ---
 
+## 🆕 What's New
+
+- 🔢 **Code type selector** — choose how the paste code (URL) is generated: numbers only, letters + numbers, or letters only. Thanks to [@hujigko](https://github.com/hujigko) for the idea and help.
+- 🕒 **Local timezone** — expiry times are now shown in Asia/Tehran local time instead of UTC.
+- 🎨 **UI polish** — refined dark dropdowns on mobile, a new neon grid background, and an optional light theme.
+
+---
+
 ## ✨ Features
 
 - 🔐 **End-to-end encryption** — paste content is encrypted at rest using Fernet (AES-128-CBC)
 - 🔑 **Password protection** — optional bcrypt-hashed password per paste
 - ⏳ **Auto-expiry** — choose expiration from 10 minutes up to 30 days
+- 🔢 **Code type selector** — generate paste codes as numbers, letters, or both
 - 🛡️ **CSRF protection** — HMAC-based CSRF tokens on all forms
 - 📄 **Raw view** — direct plaintext access via `/raw/{id}`
 - 🗑️ **Manual delete** — delete your paste at any time
@@ -239,6 +248,8 @@ chmod 775 /var/www/ctext
 sudo timedatectl set-timezone Asia/Tehran
 ```
 
+> The app also resolves time using the `Asia/Tehran` zone internally (via `zoneinfo`), so paste expiry times are shown in local time regardless of the host setting.
+
 ---
 
 ### 10. Configure Cron Job (Cleanup)
@@ -329,6 +340,12 @@ Install with:
 ```bash
 pip install -r requirements.txt --break-system-packages
 ```
+
+---
+
+## 🙏 Acknowledgements
+
+- [@hujigko](https://github.com/hujigko) — for the idea and help with the **Code type** feature, which added the option to generate paste codes as numbers, letters, or both.
 
 ---
 
