@@ -35,18 +35,40 @@ html, body{
   background: var(--bg);
   color: var(--text);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  overflow-x: hidden; /* فقط افقی */
+  overflow-x: hidden;
+  scrollbar-width: none;
 }
 
-/* background blobs */
+/* background: neon grid lines + soft glow, fading toward bottom */
 .bg-blobs{
   position:fixed;
   inset:0;
   pointer-events:none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(124,58,237,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,58,237,.12) 1px, transparent 1px);
+  background-size: 42px 42px, 42px 42px;
+}
+
+/* coloured glow over the grid */
+.bg-blobs::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
   background:
-    radial-gradient(900px 450px at 18% 0%, rgba(106,168,255,.20), transparent 62%),
-    radial-gradient(900px 500px at 92% 0%, rgba(124,58,237,.22), transparent 60%),
-    radial-gradient(700px 520px at 50% 92%, rgba(106,168,255,.10), transparent 70%);
+    radial-gradient(800px 420px at 78% 6%, rgba(106,168,255,.22), transparent 58%),
+    radial-gradient(760px 460px at 18% 0%, rgba(124,58,237,.20), transparent 60%);
+}
+
+/* fade the grid out toward the bottom so it doesn't feel busy */
+.bg-blobs::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: linear-gradient(180deg, transparent 25%, var(--bg) 95%);
 }
 
 /* ✅ Page as flex column so footer can stick to bottom */
@@ -55,6 +77,7 @@ html, body{
   margin: 0 auto;
   padding: 54px 22px 40px;
   position: relative;
+  z-index: 1;
 
   min-height: 100vh;
   display: flex;
@@ -308,6 +331,16 @@ select option, select optgroup{
   flex-wrap: wrap;
 }
 
+/* "View existing paste" form: input box + button below it (outside the box) */
+.go-form{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.go-form .go-btn{
+  width: 100%;
+}
+
 .copyinput{
   flex:1;
   min-width: 150px;
@@ -499,6 +532,34 @@ select option, select optgroup{
   width: min(420px, 90%);
 }
 
+/* code-type select (same look as .select) */
+.type-input{
+  width: 155px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background-color: rgba(0,0,0,0.26);
+  color: var(--text);
+  outline:none;
+
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+
+  background-image:
+    linear-gradient(45deg, transparent 50%, #cbd5f5 50%),
+    linear-gradient(135deg, #cbd5f5 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+.type-input:focus{
+  border-color: rgba(106,168,255,0.55);
+}
+
 /* locked view */
 .lockbox{
   margin-top: 14px;
@@ -606,7 +667,8 @@ select option, select optgroup{
     padding: 12px 0 0;
   }
 
-  .select{
+  .select,
+  .type-input{
     width: 100%;
   }
 
@@ -768,7 +830,8 @@ select option, select optgroup{
     font-size: 0.75rem;
   }
 
-  .select{
+  .select,
+  .type-input{
     padding: 8px 8px;
     font-size: 14px;
   }

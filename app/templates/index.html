@@ -35,6 +35,15 @@
           </select>
           </div>
 
+          <div class="expire">
+            <div class="expire-label">🔢 <span>Code type:</span></div>
+            <select class="type-input" name="id_type">
+              <option value="digits" {% if default_id_type == "digits" %}selected{% endif %}>Number only</option>
+              <option value="both" {% if default_id_type == "both" %}selected{% endif %}>Letters + Number</option>
+              <option value="letters" {% if default_id_type == "letters" %}selected{% endif %}>Letters only</option>
+            </select>
+          </div>
+
           <div class="pass">
             <div class="expire-label">🔒 <span>Password (optional):</span></div>
             <input class="pass-input" type="password" name="password" placeholder="••••••••" />
@@ -43,6 +52,29 @@
 
         <button class="btn" type="submit">Create Paste</button>
       </div>
+    </form>
+  </section>
+
+  <section class="card card-md">
+    <div class="section-title">View an existing paste</div>
+
+    {% if request.session.get("flash_error") %}
+      <div class="error" style="margin-bottom:12px">{{ request.session.pop("flash_error") }}</div>
+    {% endif %}
+
+    <form method="post" action="/go" class="go-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="copybox">
+        <input
+          class="copyinput"
+          type="text"
+          name="code"
+          placeholder="Enter paste code (e.g. abc123)..."
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+      <button class="btn go-btn" type="submit">Open →</button>
     </form>
   </section>
 {% endblock %}

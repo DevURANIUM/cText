@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import secrets
 import string
 import hashlib
@@ -114,7 +115,7 @@ EXPIRE_CHOICES = [
     ("3 Days", 4320),
     ("30 Days", 43200),
 ]
-DEFAULT_EXPIRE_MINUTES = 30
+DEFAULT_EXPIRE_MINUTES = 10
 
 def expire_label(minutes: int) -> str:
     if minutes < 60:
@@ -124,6 +125,40 @@ def expire_label(minutes: int) -> str:
         return f"{h} hour" + ("" if h == 1 else "s")
     d = minutes // 1440
     return f"{d} day" + ("" if d == 1 else "s")
+
+
+def time_remaining_label(expires_at: datetime) -> str:
+    """Human-readable 'time left' until the paste expires (computed at page load)."""
+    delta = expires_at - now_utc_naive()
+    total_seconds = int(delta.total_seconds())
+    if total_seconds <= 0:
+        return "expired"
+
+    days = total_seconds // 86400
+    hours = (total_seconds % 86400) // 3600
+    minutes = (total_seconds % 3600) // 60
+
+    parts = []
+    if days:
+        parts.append(f"{days} day" + ("" if days == 1 else "s"))
+    if hours:
+        parts.append(f"{hours} hour" + ("" if hours == 1 else "s"))
+    if minutes and not days:  # show minutes only when there are no days
+        parts.append(f"{minutes} min")
+    if not parts:
+        parts.append("less than a minute")
+    return ", ".join(parts)
+
+
+# =========================
+# Paste ID generation
+# =========================
+ID_ALPHABETS = {
+    "letters": string.ascii_lowercase,
+    "digits": string.digits,
+    "both": string.ascii_lowercase + string.digits,
+}
+DEFAULT_ID_TYPE = "digits"
 
 
 # =========================
@@ -140,12 +175,20 @@ def get_db():
 # =========================
 # Helpers
 # =========================
-def now_utc_naive() -> datetime:
-    return datetime.utcnow()
+# Local timezone for all timestamps (created_at / expires_at / "now").
+# Stored as naive datetimes in Tehran local time so the existing
+# comparison logic and DB columns keep working unchanged.
+LOCAL_TZ = ZoneInfo("Asia/Tehran")
+
+def now_local_naive() -> datetime:
+    return datetime.now(LOCAL_TZ).replace(tzinfo=None)
+
+# Backwards-compatible alias (older code/calls used this name)
+now_utc_naive = now_local_naive
 
 
-def gen_id(length: int = 6) -> str:
-    alphabet = string.ascii_lowercase + string.digits
+def gen_id(length: int = 6, id_type: str = DEFAULT_ID_TYPE) -> str:
+    alphabet = ID_ALPHABETS.get(id_type, ID_ALPHABETS[DEFAULT_ID_TYPE])
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
@@ -214,12 +257,13 @@ def decrypt_text(token: str) -> str:
 def home(request: Request):
     csrf_token = get_csrf_token(request)
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
+        request=request,
+        name="index.html",
+        context={
             "csrf_token": csrf_token,
             "expire_choices": EXPIRE_CHOICES,
             "default_expire": DEFAULT_EXPIRE_MINUTES,
+            "default_id_type": DEFAULT_ID_TYPE,
             "content": "",
         },
     )
@@ -233,21 +277,26 @@ def create_paste(
     content: str | None = Form(None),
     expires_in: int = Form(DEFAULT_EXPIRE_MINUTES),  # minutes
     password: str | None = Form(None),
+    id_type: str = Form(DEFAULT_ID_TYPE),
     db: Session = Depends(get_db),
 ):
     valid_minutes = [m for _, m in EXPIRE_CHOICES]
     if expires_in not in valid_minutes:
         expires_in = DEFAULT_EXPIRE_MINUTES
 
+    if id_type not in ID_ALPHABETS:
+        id_type = DEFAULT_ID_TYPE
+
     content_clean = (content or "").strip()
     if not content_clean:
         return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request,
+            request=request,
+            name="index.html",
+            context={
                 "csrf_token": get_csrf_token(request),
                 "expire_choices": EXPIRE_CHOICES,
                 "default_expire": expires_in,
+                "default_id_type": id_type,
                 "error": "Please enter some text before creating a paste.",
                 "content": "",
             },
@@ -257,9 +306,9 @@ def create_paste(
     pwd_clean = (password or "").strip()
     password_hash = hash_password(pwd_clean) if pwd_clean else None
 
-    paste_id = gen_id(6)
+    paste_id = gen_id(6, id_type)
     while db.get(Paste, paste_id) is not None:
-        paste_id = gen_id(6)
+        paste_id = gen_id(6, id_type)
 
     created = now_utc_naive()
     expires_at = created + timedelta(minutes=expires_in)
@@ -279,9 +328,9 @@ def create_paste(
 
     paste_url = str(request.url_for("view_paste", paste_id=paste_id))
     return templates.TemplateResponse(
-        "created.html",
-        {
-            "request": request,
+        request=request,
+        name="created.html",
+        context={
             "csrf_token": get_csrf_token(request),
             "paste_id": paste_id,
             "paste_url": paste_url,
@@ -290,6 +339,20 @@ def create_paste(
             "is_protected": bool(password_hash),
         },
     )
+
+
+@app.post("/go")
+def go_to_paste(
+    request: Request,
+    _csrf: None = Depends(validate_csrf),
+    code: str | None = Form(None),
+):
+    code_clean = (code or "").strip().strip("/")
+    allowed = string.ascii_lowercase + string.digits
+    if not code_clean or not all(c in allowed for c in code_clean):
+        request.session["flash_error"] = "Invalid paste code."
+        return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url=f"/{code_clean}", status_code=303)
 
 
 @app.get("/raw/{paste_id}", response_class=PlainTextResponse)
@@ -341,6 +404,7 @@ def delete_paste(request: Request, paste_id: str, _csrf: None = Depends(validate
     return RedirectResponse(url="/", status_code=303)
 
 
+# IMPORTANT: keep this last to avoid route conflicts
 @app.get("/{paste_id}", response_class=HTMLResponse, name="view_paste")
 def view_paste(request: Request, paste_id: str, db: Session = Depends(get_db)):
     paste = get_paste_or_404(db, paste_id)
@@ -349,9 +413,9 @@ def view_paste(request: Request, paste_id: str, db: Session = Depends(get_db)):
     protected = bool(paste.password_hash)
     if protected and not is_unlocked(request, paste_id):
         return templates.TemplateResponse(
-            "view.html",
-            {
-                "request": request,
+            request=request,
+            name="view.html",
+            context={
                 "csrf_token": csrf_token,
                 "paste_id": paste.id,
                 "locked": True,
@@ -361,13 +425,15 @@ def view_paste(request: Request, paste_id: str, db: Session = Depends(get_db)):
         )
 
     return templates.TemplateResponse(
-        "view.html",
-        {
-            "request": request,
+        request=request,
+        name="view.html",
+        context={
             "csrf_token": csrf_token,
             "paste_id": paste.id,
             "content": decrypt_text(paste.content),
             "locked": False,
+            "expires_at": paste.expires_at,
+            "time_remaining": time_remaining_label(paste.expires_at),
         },
     )
 
@@ -378,5 +444,10 @@ def view_paste(request: Request, paste_id: str, db: Session = Depends(get_db)):
 @app.exception_handler(StarletteHTTPException)
 def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:
-        return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
+        return templates.TemplateResponse(
+            request=request,
+            name="404.html",
+            context={},
+            status_code=404,
+        )
     return HTMLResponse(str(exc.detail), status_code=exc.status_code)

@@ -44,6 +44,12 @@
         <textarea id="pasteContent" class="copy-hidden">{{ content }}</textarea>
       </div>
 
+      <div class="hint" style="margin-top:14px">
+        🕒 Expires in <strong>{{ time_remaining }}</strong>
+        <span class="dot">•</span>
+        Expiry date: <strong>{{ expires_at.strftime("%Y-%m-%d %H:%M") }} (Iran)</strong>
+      </div>
+
     {% endif %}
   </section>
 
