@@ -8,7 +8,7 @@
 
 ## 🆕 What's New
 
-- 🔢 **Code type selector** — choose how the paste code (URL) is generated: numbers only, letters + numbers, or letters only. Thanks to [@hujigko](https://github.com/hujigko) for the idea and help.
+- 🔢 **Code type selector** — choose how the paste code (URL) is generated: numbers only, letters + numbers, or letters only.
 - 🕒 **Local timezone** — expiry times are now shown in Asia/Tehran local time instead of UTC.
 - 🎨 **UI polish** — refined dark dropdowns on mobile, a new neon grid background, and an optional light theme.
 
@@ -340,13 +340,6 @@ Install with:
 ```bash
 pip install -r requirements.txt --break-system-packages
 ```
-
----
-
-## 🙏 Acknowledgements
-
-- [@hujigko](https://github.com/hujigko) — for the idea and help with the **Code type** feature, which added the option to generate paste codes as numbers, letters, or both.
-
 ---
 
 ## 💛 Support the Project
