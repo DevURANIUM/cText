@@ -1,71 +1,104 @@
 {% extends "base.html" %}
-{% block subtitle %}View Paste{% endblock %}
+{% block title %}Paste {{ paste_id }} · cText.ir{% endblock %}
+{% block meta_description %}A shared paste on cText.ir{% endblock %}
 
 {% block content %}
-  <section class="card card-xl">
-    <div class="topbar">
-      <div class="section-title">Paste</div>
-
-      <div class="toplinks">
-        {% if not locked %}
-          <a class="link" href="/raw/{{ paste_id }}" target="_blank">Raw</a>
-          <span class="dot">•</span>
-        {% endif %}
-
-        <a class="link" href="/">New Paste</a>
+  {% if locked %}
+    <section class="panel locked">
+      <div class="lock-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
       </div>
-    </div>
+      <h1 class="created-title">Password required</h1>
+      <p class="muted">Paste <code class="tag">{{ paste_id }}</code> is protected. Enter its password to view it.</p>
 
-    {% if locked %}
-      <div class="lockbox lockbox-rtl">
-        <div class="lock-title">This paste is password protected</div>
+      {% if error %}
+        <div class="alert alert-err">{{ error }}</div>
+      {% endif %}
 
-        <div class="lock-hint">
-          After entering the correct password, this page will be unlocked.
+      <form method="post" action="/{{ paste_id }}/unlock" class="unlock-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input class="input" type="password" name="password" placeholder="Password" autofocus autocomplete="off" aria-label="Password" />
+        <button class="btn btn-primary" type="submit">Unlock</button>
+      </form>
+    </section>
+  {% else %}
+    {% set lines = content.splitlines() %}
+    <section class="panel viewer">
+      <div class="panel-head">
+        <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="panel-title">#{{ paste_id }}</span>
+        <span class="counter">{{ lines|length }} {{ "line" if lines|length == 1 else "lines" }} · {{ content|length }} chars</span>
+        <span class="spacer"></span>
+        <div class="toolbar">
+          <button class="tbtn" type="button" id="wrapBtn" title="Toggle line wrap">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h15a3 3 0 0 1 0 6h-4"/><path d="m16 16-2 2 2 2"/><path d="M3 18h7"/></svg>
+            <span>Wrap</span>
+          </button>
+          <a class="tbtn" href="/raw/{{ paste_id }}" target="_blank" rel="noopener" title="Open raw text">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+            <span>Raw</span>
+          </a>
+          <button class="tbtn" type="button" id="dlBtn" title="Download as .txt">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            <span>Download</span>
+          </button>
+          <button class="tbtn tbtn-accent" type="button" id="copyBtn" title="Copy all">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>
+            <span>Copy</span>
+          </button>
         </div>
-
-        {% if error %}
-          <div class="error" style="margin-top:12px">{{ error }}</div>
-        {% endif %}
-
-        <form method="post" action="/{{ paste_id }}/unlock" class="unlock-form unlock-form-vertical">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <input class="pass-input wide" type="password" name="password" placeholder="Enter password..." />
-          <button class="btn" type="submit">Unlock</button>
-        </form>
-      </div>
-    {% else %}
-
-      <div class="paste-box">
-        <button class="copy-inside" type="button" onclick="copyPaste()">Copy</button>
-
-        <pre class="pre" id="pastePre">{{ content }}</pre>
-
-        <textarea id="pasteContent" class="copy-hidden">{{ content }}</textarea>
       </div>
 
-      <div class="hint" style="margin-top:14px">
-        🕒 Expires in <strong>{{ time_remaining }}</strong>
-        <span class="dot">•</span>
-        Expiry date: <strong>{{ expires_at.strftime("%Y-%m-%d %H:%M") }} (Iran)</strong>
+      <div class="code" id="code">
+        <ol class="code-lines">{% for line in lines %}<li><span dir="auto">{{ line }}</span></li>{% endfor %}</ol>
       </div>
 
-    {% endif %}
-  </section>
+      <div class="panel-foot">
+        <span class="pill">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          Expires in <strong>{{ time_remaining }}</strong>
+        </span>
+        <span class="muted small">{{ expires_at.strftime("%Y-%m-%d %H:%M") }} (Tehran)</span>
+      </div>
+    </section>
 
-  <script>
-    function copyPaste(){
-      const el = document.getElementById("pasteContent");
-      const btn = document.querySelector(".copy-inside");
-      if (!el || !btn) return;
+    <textarea id="pasteContent" hidden>{{ content }}</textarea>
+  {% endif %}
+{% endblock %}
 
-      el.select();
-      el.setSelectionRange(0, 99999);
-      navigator.clipboard.writeText(el.value);
+{% block scripts %}
+{% if not locked %}
+<script>
+  (function () {
+    var raw = document.getElementById("pasteContent").value;
+    var code = document.getElementById("code");
+    var wrapBtn = document.getElementById("wrapBtn");
 
-      const old = btn.innerText;
-      btn.innerText = "Copied";
-      setTimeout(() => btn.innerText = old, 1200);
+    var wrap = false;
+    try { wrap = localStorage.getItem("ctext-wrap") === "1"; } catch (e) {}
+    function applyWrap() {
+      code.classList.toggle("is-wrapped", wrap);
+      wrapBtn.classList.toggle("is-on", wrap);
     }
-  </script>
+    applyWrap();
+    wrapBtn.addEventListener("click", function () {
+      wrap = !wrap;
+      try { localStorage.setItem("ctext-wrap", wrap ? "1" : "0"); } catch (e) {}
+      applyWrap();
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", function () { copyText(raw, this); });
+
+    document.getElementById("dlBtn").addEventListener("click", function () {
+      var blob = new Blob([raw], { type: "text/plain;charset=utf-8" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "ctext-{{ paste_id }}.txt";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    });
+  })();
+</script>
+{% endif %}
 {% endblock %}

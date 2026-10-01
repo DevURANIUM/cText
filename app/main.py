@@ -55,14 +55,16 @@ if not SESSION_SECRET:
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="cText (FastAPI)")
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+app.mount("/static", StaticFiles(directory=os.path.join(APP_DIR, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(APP_DIR, "templates"))
 
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
     same_site="lax",
-    https_only=True, # If you are on HTTPS, set it to True
+    # Secure cookies need HTTPS. Set SESSION_HTTPS_ONLY=false in .env when serving over plain HTTP.
+    https_only=(os.getenv("SESSION_HTTPS_ONLY", "true").strip().lower() not in ("0", "false", "no")),
 )
 
 # =========================
@@ -103,17 +105,17 @@ def validate_csrf(
 # label, minutes
 # =========================
 EXPIRE_CHOICES = [
-    ("10 min", 10),
-    ("30 min", 30),
-    ("1 hours", 60),
+    ("10 minutes", 10),
+    ("30 minutes", 30),
+    ("1 hour", 60),
     ("2 hours", 120),
     ("6 hours", 360),
     ("8 hours", 480),
     ("12 hours", 720),
-    ("1 Days", 1440),
-    ("2 Days", 2880),
-    ("3 Days", 4320),
-    ("30 Days", 43200),
+    ("1 day", 1440),
+    ("2 days", 2880),
+    ("3 days", 4320),
+    ("30 days", 43200),
 ]
 DEFAULT_EXPIRE_MINUTES = 10
 

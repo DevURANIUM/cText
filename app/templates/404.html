@@ -1,18 +1,13 @@
 {% extends "base.html" %}
-{% block subtitle %}Not Found{% endblock %}
+{% block title %}Not found · cText.ir{% endblock %}
 
 {% block content %}
-  <section class="card card-md notfound-card">
-    <div class="notfound-icon">😕</div>
-
-    <div class="h1 notfound-title">Paste Not Found</div>
-
-    <div class="muted notfound-text">
-      This paste does not exist or has already been deleted.
-    </div>
-
-    <div class="notfound-actions">
-      <a class="link notfound-link" href="/">Back to Home →</a>
+  <section class="panel notfound">
+    <div class="notfound-code">404</div>
+    <h1 class="created-title">Paste not found</h1>
+    <p class="muted">It never existed, it expired, or it was deleted.</p>
+    <div class="created-actions center">
+      <a class="btn btn-primary" href="/">Create a new paste</a>
     </div>
   </section>
 {% endblock %}
