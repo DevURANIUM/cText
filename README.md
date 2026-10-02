@@ -1,365 +1,118 @@
-# cText 📋
+# cText.ir
 
-> A fast, minimal, and secure pastebin alternative — built with FastAPI.
+سرویس ساده برای اشتراک‌گذاری متن (Pastebin). متن رو می‌چسبونی، زمان انقضا رو انتخاب می‌کنی و کد یا لینکش رو برای بقیه می‌فرستی.
 
-**cText** lets you share text snippets privately and securely. Pastes are encrypted at rest, can be password-protected, and automatically expire. No accounts, no tracking, no ads.
+## امکانات
 
----
+- **رمزنگاری:** محتوای همه‌ی پیست‌ها با Fernet رمز شده ذخیره می‌شه.
+- **رمز عبور اختیاری:** هر پیست می‌تونه رمز داشته باشه (با bcrypt هش می‌شه).
+- **انقضای خودکار:** از ۱۰ دقیقه تا ۳۰ روز. پیست‌های منقضی هر شب پاک می‌شن.
+- **کد کوتاه:** کد ۶ کاراکتری، فقط عدد، فقط حروف، یا ترکیبی.
+- **نمایشگر:** شماره‌ی خط، شکستن خطوط بلند، Raw، دانلود `.txt` و کپی با یک کلیک.
+- **ظاهر:** حالت روشن و تیره، مناسب موبایل، و پشتیبانی از متن فارسی (فونت وزیر).
+- **امنیت فرم‌ها:** محافظت CSRF روی همه‌ی فرم‌ها.
 
-## 🆕 What's New
+## تکنولوژی
 
-- 🔢 **Code type selector** — choose how the paste code (URL) is generated: numbers only, letters + numbers, or letters only.
-- 🕒 **Local timezone** — expiry times are now shown in Asia/Tehran local time instead of UTC.
-- 🎨 **UI polish** — refined dark dropdowns on mobile, a new neon grid background, and an optional light theme.
-
----
-
-## ✨ Features
-
-- 🔐 **End-to-end encryption** — paste content is encrypted at rest using Fernet (AES-128-CBC)
-- 🔑 **Password protection** — optional bcrypt-hashed password per paste
-- ⏳ **Auto-expiry** — choose expiration from 10 minutes up to 30 days
-- 🔢 **Code type selector** — generate paste codes as numbers, letters, or both
-- 🛡️ **CSRF protection** — HMAC-based CSRF tokens on all forms
-- 📄 **Raw view** — direct plaintext access via `/raw/{id}`
-- 🗑️ **Manual delete** — delete your paste at any time
-- 🧹 **Auto-cleanup** — daily cron job removes expired pastes
-- 🚫 **No registration required** — completely anonymous usage
-- 🌐 **HTTPS-first** — designed to run behind Nginx with Let's Encrypt SSL
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Backend | FastAPI + Uvicorn |
-| ORM | SQLAlchemy |
-| Database | SQLite |
-| Encryption | Cryptography (Fernet) |
-| Password Hashing | bcrypt |
-| Sessions | Starlette SessionMiddleware |
-| Templating | Jinja2 |
-| Reverse Proxy | Nginx |
-| Process Manager | Systemd |
-| SSL | Let's Encrypt (Certbot) |
-
----
-
-## 📁 Project Structure
+FastAPI · Jinja2 · SQLAlchemy · SQLite · Uvicorn · Nginx
 
 ```
-ctext/
+Client → Nginx (80/443) → Uvicorn (127.0.0.1:8001) → FastAPI → SQLite (pastes.db)
+```
+
+## ساختار پروژه
+
+```
 ├── app/
-│   ├── main.py          # FastAPI routes and application logic
-│   ├── models.py        # SQLAlchemy models
-│   ├── db.py            # Database session setup
-│   ├── static/          # CSS, JS, assets
-│   └── templates/       # Jinja2 HTML templates
-│       ├── index.html
-│       ├── view.html
-│       ├── created.html
-│       └── 404.html
-├── cleanup_expired.py   # Standalone cleanup script (used by cron)
-├── requirements.txt
-├── .env                 # Secret keys (not committed)
-└── pastes.db            # SQLite database (auto-created)
+│   ├── main.py            # مسیرها و منطق برنامه
+│   ├── db.py              # اتصال دیتابیس
+│   ├── models.py          # مدل Paste
+│   ├── requirements.txt
+│   ├── templates/         # صفحه‌ها (Jinja2)
+│   └── static/            # CSS، فونت، آیکون
+├── cleanup_expired.py     # پاک‌سازی پیست‌های منقضی (cron)
+├── install.sh             # نصب‌کننده‌ی سرور
+└── .env.example           # نمونه‌ی تنظیمات
 ```
 
----
+## نصب روی سرور
 
-## ⚙️ Installation & Deployment
-
-### Prerequisites
-
-- Ubuntu 22.04+ (or similar Debian-based distro)
-- Python 3.10+
-- Nginx
-- Certbot (for SSL)
-- A domain pointing to your server
-
----
-
-### 1. Update Server
+روی سرور Ubuntu یا Debian، فقط با یک دستور. پوشه‌ی پروژه رو روی سرور کپی کن (مثلاً با `scp` یا `git clone`)، بعد داخلش:
 
 ```bash
-apt update -y && apt upgrade -y && apt autoremove -y
+sudo bash install.sh
 ```
 
----
+دو تا سؤال می‌پرسه:
 
-### 2. Install System Dependencies
+1. **دامنه:** مثلاً `ctext.ir`. خالی بذاری، سایت روی IP سرور با HTTP بالا میاد.
+2. **ایمیل:** برای گواهی SSL از Let's Encrypt. خالی بذاری، SSL نصب نمی‌شه.
+
+بدون سؤال:
 
 ```bash
-sudo apt install -y python3 python3-pip nginx
+sudo DOMAIN=ctext.ir EMAIL=you@mail.com bash install.sh
 ```
 
-If you encounter conflicts with `typing-extensions`:
+> قبل از نصب SSL، رکورد A دامنه باید به IP سرور اشاره کنه.
+
+### اسکریپت چه کارهایی می‌کنه
+
+| مرحله | توضیح |
+|---|---|
+| پکیج‌ها | `python3`، `python3-venv`، `nginx`، و `certbot` (اگه SSL بخوای) |
+| فایل‌ها | کپی پروژه به `/var/www/ctext` (فایل `.env` و دیتابیس موجود دست نمی‌خورن) |
+| پایتون | ساخت virtualenv در `/var/www/ctext/venv`، بدون `--break-system-packages` |
+| `.env` | فقط بار اول کلیدهای امن رو خودش می‌سازه |
+| سرویس | `ctext.service` در systemd روی `127.0.0.1:8001` با ری‌استارت خودکار |
+| nginx | reverse proxy، به‌علاوه‌ی سرو مستقیم فایل‌های `/static` |
+| SSL | گرفتن گواهی با certbot و ریدایرکت HTTP به HTTPS |
+| Cron | پاک کردن پیست‌های منقضی هر روز ساعت ۳ صبح |
+
+### به‌روزرسانی
+
+فایل‌های جدید رو جایگزین کن و دوباره همون دستور رو بزن. داده‌ها و کلیدها حفظ می‌شن:
 
 ```bash
-apt remove --purge python3-typing-extensions
+sudo bash install.sh
 ```
 
----
-
-### 3. Clone & Set Up Project
+### دستورهای کاربردی
 
 ```bash
-mkdir /var/www/ctext/
-cd /var/www/ctext/
-git clone https://github.com/DevURANIUM/cText.git .
-pip install -r requirements.txt --break-system-packages
+systemctl status ctext            # وضعیت
+journalctl -u ctext -f            # لاگ زنده
+systemctl restart ctext           # ری‌استارت
+sudo bash install.sh --uninstall  # حذف سرویس، nginx و cron (فایل‌ها می‌مونن)
 ```
 
----
-
-### 4. Configure Environment Variables
-
-Create the `.env` file:
+## اجرای محلی (توسعه)
 
 ```bash
-nano /var/www/ctext/.env
+python -m venv venv
+venv/bin/pip install -r app/requirements.txt   # ویندوز: venv\Scripts\pip
+cp .env.example .env                            # کلیدها رو پر کن، SESSION_HTTPS_ONLY=false
+venv/bin/uvicorn app.main:app --reload --port 8001
 ```
 
-Add the following:
+بعد برو به `http://localhost:8001`.
 
-```env
-PASTE_SECRET_KEY=
-SESSION_SECRET_KEY=
-CSRF_SESSION_KEY=
-```
+## تنظیمات (`.env`)
 
-**How to generate each key:**
+| متغیر | توضیح |
+|---|---|
+| `PASTE_SECRET_KEY` | کلید Fernet برای رمز کردن محتوای پیست‌ها |
+| `SESSION_SECRET_KEY` | کلید امضای کوکی session |
+| `CSRF_SESSION_KEY` | اسم کلید توکن CSRF در session (مثلاً `csrf_token`) |
+| `SESSION_HTTPS_ONLY` | `true` برای HTTPS و `false` برای HTTP ساده |
 
-```bash
-# PASTE_SECRET_KEY (Fernet key — must be this exact format)
-python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+## نکته‌های مهم
 
-# SESSION_SECRET_KEY (random URL-safe string)
-python3 -c "import secrets; print(secrets.token_urlsafe(64))"
-
-# CSRF_SESSION_KEY (just a session key name, e.g. a short string)
-python3 -c "import secrets; print(secrets.token_urlsafe(64))"
-```
-
-Example `.env` after filling in:
-
-```env
-PASTE_SECRET_KEY=Ib7k2YourGeneratedFernetKeyHere=
-SESSION_SECRET_KEY=yourLongRandomSessionSecretHere
-CSRF_SESSION_KEY=csrf_token
-```
-
-> ⚠️ Never commit `.env` to version control. Add it to `.gitignore`.
+- **از `/var/www/ctext/.env` بک‌آپ بگیر.** اگه `PASTE_SECRET_KEY` گم بشه، پیست‌های قبلی دیگه باز نمی‌شن.
+- زمان‌ها به وقت تهران ذخیره می‌شن (`Asia/Tehran`). تنظیم timezone سرور لازم نیست.
+- درگاه داخلی رو با `sudo APP_PORT=8002 bash install.sh` عوض کن.
+- اگه سایت روی HTTP ساده بالاست، باید `SESSION_HTTPS_ONLY=false` باشه. وگرنه فرم‌ها خطای CSRF می‌دن. اسکریپت نصب این مقدار رو خودش تنظیم می‌کنه.
 
 ---
 
-### 5. Configure Systemd Service
-
-Create `/etc/systemd/system/ctext.service`:
-
-```ini
-[Unit]
-Description=ctext FastAPI application
-After=network.target
-
-[Service]
-User=www-data
-Group=www-data
-WorkingDirectory=/var/www/ctext
-
-EnvironmentFile=/var/www/ctext/.env
-
-ExecStart=/usr/local/bin/uvicorn app.main:app \
-  --host 127.0.0.1 \
-  --port 8001 \
-  --proxy-headers
-
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl start ctext
-sudo systemctl enable ctext
-sudo systemctl status ctext
-```
-
----
-
-### 6. Configure Nginx
-
-Create `/etc/nginx/sites-available/ctext.ir`:
-
-```nginx
-server {
-    listen 80;
-    server_name ctext.ir;
-
-    location / {
-        proxy_pass http://127.0.0.1:8001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-Enable the site:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/ctext.ir /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
----
-
-### 7. Enable SSL (Let's Encrypt)
-
-```bash
-sudo certbot --nginx -d ctext.ir
-sudo certbot renew --dry-run
-```
-
----
-
-### 8. Fix File Permissions
-
-```bash
-chown www-data:www-data /var/www/ctext/pastes.db
-chmod 664 /var/www/ctext/pastes.db
-chown www-data:www-data /var/www/ctext
-chmod 775 /var/www/ctext
-```
-
----
-
-### 9. Set Timezone (Optional)
-
-```bash
-sudo timedatectl set-timezone Asia/Tehran
-```
-
-> The app also resolves time using the `Asia/Tehran` zone internally (via `zoneinfo`), so paste expiry times are shown in local time regardless of the host setting.
-
----
-
-### 10. Configure Cron Job (Cleanup)
-
-Run `crontab -e` and add:
-
-```bash
-# Run cleanup every day at 03:00 AM
-0 3 * * * cd /var/www/ctext && /usr/bin/python3 cleanup_expired.py >> /var/www/ctext/ctext_cleanup.log 2>&1
-```
-
-Verify:
-
-```bash
-crontab -l
-```
-
----
-
-## 🏗️ Architecture
-
-```
-Client (Browser)
-       │
-       ▼
-  Nginx :80/:443  ──── SSL termination (Let's Encrypt)
-       │
-       ▼
- Uvicorn :8001 (127.0.0.1 only)
-       │
-       ▼
- FastAPI Application
-       │
-       ▼
-  SQLite (pastes.db)
-```
-
-- Nginx handles all public traffic and TLS
-- Uvicorn binds only to localhost for security
-- Systemd ensures the process restarts automatically on failure
-
----
-
-## 🔒 Security Notes
-
-- Paste content is **encrypted at rest** using Fernet symmetric encryption
-- Passwords are hashed with **bcrypt (12 rounds)**; passwords longer than 72 bytes are SHA-256-prehashed before bcrypt to prevent truncation
-- **CSRF tokens** are signed using `hmac.compare_digest` to prevent timing attacks
-- Sessions use `SameSite=Lax` and `https_only=True`
-- The application process runs as `www-data` (least privilege)
-- Uvicorn binds only to `127.0.0.1` — never exposed directly to the internet
-
----
-
-## ✅ Final Checks
-
-```bash
-sudo systemctl status ctext
-sudo nginx -t
-sudo certbot renew --dry-run
-```
-
-Your application will be live at:
-
-```
-https://ctext.ir
-```
-
----
-
-## 📦 Requirements
-
-```
-fastapi
-uvicorn
-gunicorn
-jinja2
-sqlalchemy
-python-dotenv
-python-multipart
-bcrypt
-cryptography
-itsdangerous
-```
-
-Install with:
-
-```bash
-pip install -r requirements.txt --break-system-packages
-```
----
-
-## 💛 Support the Project
-
-If cText is useful to you, consider supporting its development:
-
-| Network | Address |
-|---------|---------|
-| **BTC** | `bc1qcclcp574hnznm0nmdzzf0ta7366svjskttqks3` |
-| **LTC** | `ltc1qcrkelw38gjrmg0ptjy2nshqej622kp76het7q0` |
-| **XRP** | `rPoK5SBChFPqEiQv1W97LW6FKoJZLipDVQ` |
-| **XLM** | `GDMUQREEZNBSTQOT5BV7MYEMXJFV3CYRZXUVOYCTIUZTHUWPHLVASFVD` |
-| **TON** | `UQAJH2N0pqpvC9YN841w5NH1dCN9Lakwkpjvoy7vXf-vfqgv` |
-| **TRON** | `TXJqhhwvkrTdnf5HReZf55hEzZuxjto3R4` |
-| **USDT (BEP20)** | `0x1591036c4bD05b046532B65Df939fcd7824E18c7` |
-
-Every contribution, no matter how small, helps keep the project running. ❤️
-
----
-
-## 📄 License
-
-This project is open source. See [LICENSE](LICENSE) for details.
+Powered by [URANIUM](https://t.me/DevRouter)
